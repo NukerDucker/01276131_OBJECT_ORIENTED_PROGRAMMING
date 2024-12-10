@@ -1,5 +1,3 @@
-# Models for Banking System
-
 class User:
     def __init__(self, citizen_id: str, name: str):
         self.__citizen_id = citizen_id
@@ -12,8 +10,6 @@ class User:
     @property
     def full_name(self) -> str:
         return self.__name
-
-
 class Account:
     def __init__(self, account_number: str, owner: User, initial_balance: float = 0.0):
         self.__account_number = account_number
