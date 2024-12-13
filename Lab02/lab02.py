@@ -11,6 +11,11 @@ class Student:
     def student_name(self):
         return self.__name
     
+    @student_name.setter
+    def student_name(self, student):
+        self.__name = student
+        
+        
 class Teacher:
     def __init__(self, teacher_id: str, name: str):
         self.__teacher_id = teacher_id
@@ -73,7 +78,6 @@ class Enrollment:
             self.__grade = grade
         else:
             return "Error"
-    
 
 student_list = []
 subject_list = []
@@ -91,24 +95,26 @@ def search_student_by_id(student_id):
             return student
         
 def enroll_to_subject(student: Student, subject: Subject):
-    try:
-        enrollment = Enrollment(student, subject)
-        if enrollment in enrollment_list:
-            return "Already Enrolled"
-        enrollment_list.append(enrollment)
-        return "Done"
-    except Exception:
+    if not isinstance(student, Student) or not isinstance(subject, Subject):
         return "Error"
     
+    for enrollment in enrollment_list:
+        if enrollment.student == student and enrollment.subject == subject:
+            return "Already Enrolled"
+    
+    new_enrollment = Enrollment(student, subject)
+    enrollment_list.append(new_enrollment)
+    return "Done"
+    
 def drop_from_subject(student, subject):
-    try:
-        for enrollment in enrollment_list:
-            if enrollment.student == student and enrollment.subject == subject:
-                enrollment_list.remove(enrollment)
-                return "Done"
-        return "Not Found"
-    except Exception:
+    if not isinstance(student, Student) or not isinstance(subject, Subject):
         return "Error"
+    for enrollment in enrollment_list:
+        if enrollment.student == student and enrollment.subject == subject:
+            enrollment_list.remove(enrollment)
+            return "Done"
+        
+    return "Not Found"
 
 def search_enrollment_subject_student(subject, student):
     for enrollment in enrollment_list:
@@ -178,16 +184,6 @@ def list_student_enrolled_in_subject(subject_id):
     for enrollment in filter_student_list:
         student_dict[enrollment.student.student_id] = enrollment.student.student_name
     return student_dict
-
-def list_subject_enrolled_by_student(student_id):
-    student = search_student_by_id(student_id)
-    if student is None:
-        return "Student not found"
-    filter_subject_list = search_subject_that_student_enrolled(student)
-    subject_dict = {}
-    for enrollment in filter_subject_list:
-        subject_dict[enrollment.subject.subject_id] = enrollment.subject.subject_name
-    return subject_dict
 
 def list_subject_enrolled_by_student(student_id):
     student = search_student_by_id(student_id)
@@ -298,13 +294,13 @@ print("")
 
 ### Test case #8 : get_no_of_student_enrolled
 print("Test case #8 get_no_of_student_enrolled")
-print("Answer : 6")
+print("Answer : 5")
 print(get_no_of_student_enrolled(subject_list[0]))
 print("")
 
 ### Test case #9 : search_subject_that_student_enrolled
 print("Test case #9 search_subject_that_student_enrolled")
-print("Answer : ['CS102', 'CS103', 'CS101']")
+print("Answer : ['CS102', 'CS103']")
 lst = search_subject_that_student_enrolled(student_list[0])
 print([i.subject.subject_id for i in lst])
 print("")
