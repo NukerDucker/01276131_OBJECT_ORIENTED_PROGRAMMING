@@ -39,8 +39,17 @@ class Account:
 
     def add_transaction(self, transaction):
         self.__transactions.append(transaction)
+        
+    def deposit(self, amount: float):
+        if amount > 0 :
+            self.__balance += amount
+        else:
+            return "Invalid Amount"
 
-
+    def withdraw(self, amount: float):
+        if amount > 0 and self.__balance > 0:
+            self.__balance -= amount
+        return 'Invalid Amount'
 class ATMCard:
     def __init__(self, card_number: str, account: Account, pin: str = '0000'):
         self.__card_number = card_number
@@ -62,10 +71,6 @@ class ATMCard:
     @property
     def balance(self) -> float:
         return self.__account.balance
-    
-    @balance.setter
-    def balance(self, balance: float):
-        self.__account.balance = balance
         
     @property
     def account_number(self) -> str:
@@ -103,9 +108,9 @@ class ATMMachine:
     def deposit(self, account: Account, amount: float):
         if amount <= 0:
             return "Deposit amount must be positive"
-        account.balance += amount
+        account.deposit(amount)
         self.__atm_balance += amount
-        account.add_transaction(Transaction('D', amount, self.__machine_id))
+        account.add_transaction(Transaction('D', amount, account.balance, self.__machine_id))
 
     def withdraw(self, account: Account, amount: float):
         if amount > self.__atm_balance:
@@ -118,7 +123,7 @@ class ATMMachine:
             return "Withdrawal amount must be positive"
         account.balance -= amount
         self.__atm_balance -= amount
-        account.add_transaction(Transaction('W', amount, self.__machine_id))
+        account.add_transaction(Transaction('W', amount, account.balance, self.__machine_id))
 
     def transfer(self, sender: Account, receiver: Account, amount: float):
         if amount <= 0:
@@ -127,21 +132,22 @@ class ATMMachine:
             return "Insufficient sender account balance"
         sender.balance -= amount
         receiver.balance += amount
-        sender.add_transaction(Transaction('TW', amount, self.__machine_id, receiver.account_number))
-        receiver.add_transaction(Transaction('TD', amount, self.__machine_id, sender.account_number))
+        sender.add_transaction(Transaction('TW', amount, sender.balance, self.__machine_id, receiver.account_number))
+        receiver.add_transaction(Transaction('TD', amount, receiver.balance, self.__machine_id, sender.account_number))
 
 
 class Transaction:
-    def __init__(self, transaction_type: str, amount: float, atm_id: str, account_number: str = None):
+    def __init__(self, transaction_type: str, amount: float, balance: float, atm_id: str, account_number: str = None):
         self.__transaction_type = transaction_type
         self.__amount = amount
+        self.__balance = balance
         self.__atm_id = atm_id
         self.__account_number = account_number
 
     def __str__(self):
         if self.__transaction_type in ('TW', 'TD'):
-            return f'{self.__transaction_type}-ATM : {self.__atm_id}-{self.__amount}-{self.__account_number}'
-        return f'{self.__transaction_type}-ATM : {self.__atm_id}-{self.__amount}'
+            return f'{self.__transaction_type}-ATM : {self.__atm_id}-{self.__amount}-{self.__balance}-{self.__account_number}'
+        return f'{self.__transaction_type}-ATM : {self.__atm_id}-{self.__amount}-{self.__balance}'
 
 
 class Bank:
@@ -179,7 +185,7 @@ class Bank:
                 return account
 
 
-# Data Initialization
+#############################################################################
 user_data = {
     '1-1101-12345-12-0': ['Harry Potter', '1234567890', '12345', 20_000],
     '1-1101-12345-13-0': ['Hermione Granger', '0987654321', '12346', 1_000]
@@ -235,52 +241,55 @@ print(SEPARATOR)
 # Test case 4
 print("\033[1m\033[4mTest case 4\033[0m")
 atm = bank.get_atm('1001')
-card = atm.insert_card('12345', '1234')
-print(f'Harry account balance before: {card.account.balance}')
-print(atm.withdraw(card.account, 500))
-print(f'Harry account balance after: {card.account.balance}')
+card = atm.insert_card('12346', '1234')
+print(f'Hermione account balance before: {card.account.balance}')
+atm.withdraw(card.account, 500)
+print(f'Hermione account balance after: {card.account.balance}')
 print(SEPARATOR)
 
 # Test case 5
 print("\033[1m\033[4mTest case 5\033[0m")
 atm = bank.get_atm('1001')
-card = atm.insert_card('12345', '1234')
-print(atm.withdraw(card.account, 20000))
+card = atm.insert_card('12346', '1234')
+print(atm.withdraw(card.account, 2000))
 print(SEPARATOR)
 
 # Test case 6
 print("\033[1m\033[4mTest case 6\033[0m")
 atm = bank.get_atm('1001')
-card = atm.insert_card('12345', '1234')
-print(atm.withdraw(card.account, -500))
+sender_card = atm.insert_card('12345', '1234')
+receiver_card = atm.insert_card('12346', '1234')
+print(f'Sender balance before: {sender_card.account.balance}')
+print(f'Receiver balance before: {receiver_card.account.balance}')
+print(atm.transfer(sender_card.account, receiver_card.account, 10_000))
+print(f'Sender balance after: {sender_card.account.balance}')
+print(f'Receiver balance after: {receiver_card.account.balance}')
 print(SEPARATOR)
 
 # Test case 7
 print("\033[1m\033[4mTest case 7\033[0m")
 atm = bank.get_atm('1001')
-sender_card = atm.insert_card('12345', '1234')
-receiver_card = atm.insert_card('12346', '1234')
-print(f'Sender balance before: {sender_card.account.balance}')
-print(f'Receiver balance before: {receiver_card.account.balance}')
-print(atm.transfer(sender_card.account, receiver_card.account, 300))
-print(f'Sender balance after: {sender_card.account.balance}')
-print(f'Receiver balance after: {receiver_card.account.balance}')
+card = atm.insert_card('12346', '1234')
+for transaction in card.account.transactions:
+    print(transaction)
 print(SEPARATOR)
 
 # Test case 8
 print("\033[1m\033[4mTest case 8\033[0m")
 atm = bank.get_atm('1001')
-sender_card = atm.insert_card('12345', '1234')
-receiver_card = atm.insert_card('12346', '1234')
-print(atm.transfer(sender_card.account, receiver_card.account, -300))
+test_result = atm.insert_card('12345', '9999')
+print(test_result)
 print(SEPARATOR)
 
 # Test case 9
 print("\033[1m\033[4mTest case 9\033[0m")
-atm = bank.get_atm('1001')
-sender_card = atm.insert_card('12345', '1234')
-receiver_card = atm.insert_card('12346', '1234')
-print(atm.transfer(sender_card.account, receiver_card.account, 20000))
+atm_machine = bank.get_atm('1001')
+account = atm_machine.insert_card('12345', '1234') 
+harry_balance_before = account.balance
+print(f"Harry's account before test: {harry_balance_before}")
+print("Attempting to withdraw 45,000 Baht...")
+result = atm_machine.withdraw(account, 45000)
+print(f"{result}")
 print(SEPARATOR)
 
 # Test case 10
@@ -290,7 +299,6 @@ account = atm_machine.insert_card('12345', '1234')
 print(f"ATM machine balance before: {atm_machine.atm_balance:,}")
 print("Attempting to withdraw 250,000 baht...")
 result = atm_machine.withdraw(account, 250000)
-print("Expected result: ATM has insufficient funds")
-print(f"Actual result: {result}")
+print(f"{result}")
 print(f"ATM machine balance after: {atm_machine.atm_balance:,}")
 print(SEPARATOR)
