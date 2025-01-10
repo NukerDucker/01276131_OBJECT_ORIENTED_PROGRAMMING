@@ -1,8 +1,8 @@
 class User:
-    def __init__(self, citizen_id: str, name: str):
-        self.__citizen_id = citizen_id
-        self.__name = name
-        self.__accounts = []
+    def __init__(self, citizen_id: str, name: str) -> None:
+        self.__citizen_id: str = citizen_id
+        self.__name: str = name
+        self.__accounts: list[Account] = []
 
     @property
     def citizen_id(self) -> str:
@@ -11,25 +11,26 @@ class User:
     @property
     def full_name(self) -> str:
         return self.__name
-    
+
     @property
-    def accounts(self):
+    def accounts(self) -> list:
         return self.__accounts
 
-    def add_account(self, account):
+    def add_account(self, account: 'Account') -> None:
         self.__accounts.append(account)
 
-    def search_account(self, account_number: str):
+    def search_account(self, account_number: str) -> 'Account | None':
         for account in self.__accounts:
             if account.account_number == account_number:
                 return account
-            
+        return None
+
 class Account:
-    def __init__(self, account_number: str, owner: User, initial_balance: float = 0.0):
-        self.__account_number = account_number
-        self.__owner = owner
-        self.__balance = initial_balance
-        self.__transactions = []
+    def __init__(self, account_number: str, owner: User, initial_balance: float = 0.0) -> None:
+        self.__account_number: str = account_number
+        self.__owner: User = owner
+        self.__balance: float = initial_balance
+        self.__transactions: list[Transaction] = []
 
     @property
     def account_number(self) -> str:
@@ -44,103 +45,100 @@ class Account:
         return self.__balance
 
     @property
-    def transactions(self) -> list:
+    def transactions(self) -> list['Transaction']:
         return self.__transactions
-    
+
     @amount.setter
-    def amount(self, balance: float):
+    def amount(self, balance: float) -> None:
         self.__balance = balance
 
-    def add_transaction(self, transaction):
+    def add_transaction(self, transaction: 'Transaction') -> None:
         self.__transactions.append(transaction)
-        
-    def transfer(self, amount: float, receiver):
-        if amount > 0:
-            if amount <= self.__balance:
-                self.__balance -= amount
-                receiver.__balance += amount
-                # Use '*' for direct transfers
-                self.add_transaction(Transaction('TW', amount, self.__account_number, receiver.account_number, source='ACC'))
-                receiver.add_transaction(Transaction('TD', amount, receiver.account_number, self.__account_number, source='ACC'))
-            else:
-                return "Insufficient funds"
-        else:
-            return "Invalid amount"
 
-        
-    def __add__(self, amount: float):
-        self.__balance += amount
-        
-    def __sub__(self, amount: float):
+    def transfer(self, amount: float, receiver: 'Account') -> str:
+        if amount <= 0:
+            return "Invalid amount"
+        if amount > self.__balance:
+            return "Insufficient funds"
         self.__balance -= amount
-        
+        receiver.__balance += amount
+        self.add_transaction(Transaction('TW', amount, self.__account_number, receiver.account_number, source='ACC'))
+        receiver.add_transaction(Transaction('TD', amount, receiver.account_number, self.__account_number, source='ACC'))
+
+    def __add__(self, amount: float) -> None:
+        self.__balance += amount
+
+    def __sub__(self, amount: float) -> None:
+        self.__balance -= amount
+
     def __iter__(self):
         return iter(self.__transactions)
 
+
 class SavingsAccount(Account):
-    interest_rate = 0.5
-    type = "Saving"
+    interest_rate: float = 0.5
+    type: str = "Saving"
 
-    def __init__(self, account_number, user, amount, card=None):
+    def __init__(self, account_number: str, user: User, amount: float, card: 'Card | None' = None) -> None:
         super().__init__(account_number, user, amount)
-        self.__card = card
-        
+        self.__card: Card | None = card
+
     @property
-    def card(self):
+    def card(self) -> 'Card | None':
         return self.__card
-    
-    @card.setter
-    def card(self, card):
-        self.__card = card
-        
-class FixDepositAccount(Account):
-    interest_rate = 2.5
-    type = "FixDeposit"
 
-    def __init__(self, account_number, user, amount, card=None):
+    @card.setter
+    def card(self, card: 'Card | None') -> None:
+        self.__card = card
+
+
+class FixDepositAccount(Account):
+    interest_rate: float = 2.5
+    type: str = "Fix Deposit"
+
+    def __init__(self, account_number: str, user: User, amount: float, card: 'Card | None' = None) -> None:
         super().__init__(account_number, user, amount)
-    
+
+
 class Card:
-    def __init__(self, card_no, account, pin):
-        self.__card_no = card_no
-        self.__account = account
-        self.__pin = pin
-    
+    def __init__(self, card_no: str, account: Account, pin: str) -> None:
+        self.__card_no: str = card_no
+        self.__account: Account = account
+        self.__pin: str = pin
+
     @property
-    def account(self):
+    def account(self) -> Account:
         return self.__account
-    
+
     @property
-    def pin(self):
+    def pin(self) -> str:
         return self.__pin
-    
+
     @property
-    def card_no(self):
+    def card_no(self) -> str:
         return self.__card_no
-    
+
     @property
     def amount(self) -> float:
         return self.__account.amount
-        
+
     @property
     def account_no(self) -> str:
         return self.__account.account_number
-
 class ATMCard(Card):
-    FEE = 150
-    
-    def __init__(self, card_no: str, account: Account, pin: str = '0000'):
+    FEE: int = 150
+
+    def __init__(self, card_no: str, account: Account, pin: str = '0000') -> None:
         super().__init__(card_no, account, pin)
     
 
 class DebitCard(ATMCard):
-    FEE = 300
+    FEE: int = 300
     
-    def __init__(self, card_no: str, account: Account, pin: str = '0000'):
+    def __init__(self, card_no: str, account: Account, pin: str = '0000') -> None:
         super().__init__(card_no, account, pin)
 
-
-class ATMMachine:
+class ATM:
     MAXIMUM_WITHDRAWAL: int = 20_000
 
     def __init__(self, machine_id: str, initial_amount: float = 1_000_000):
@@ -155,21 +153,19 @@ class ATMMachine:
     def atm_balance(self) -> float:
         return self.__atm_balance
 
-    def insert_card(self, card: Card, pin: str):
+    def insert_card(self, card: Card, pin: str) -> str:
         if card.pin == pin:
             return "Success"
         return "Invalid card or PIN"
 
-    def deposit(self, account: Account, amount: float):
-        if amount > 0:
-            account + amount
-            # Use ATM ID as machine_id
-            account.add_transaction(Transaction('D', amount, self.__machine_id, source='ATM'))
-            self.__atm_balance += amount
-        else:
+    def deposit(self, account: Account, amount: float) -> None | str:
+        if amount < 0:
             return "Invalid amount"
+        account + amount
+        account.add_transaction(Transaction('D', amount, self.__machine_id, source='ATM'))
+        self.__atm_balance += amount           
 
-    def withdraw(self, account: Account, amount: float):
+    def withdraw(self, account: Account, amount: float) -> str | None:
         if amount <= 0:
             return "Withdrawal amount must be positive"
         if amount > self.__atm_balance:
@@ -179,12 +175,11 @@ class ATMMachine:
         if amount > account.amount:
             return "Insufficient account balance"
         account - amount
-        # Use ATM ID as machine_id
         account.add_transaction(Transaction('W', amount, self.__machine_id, source='ATM'))
         self.__atm_balance -= amount
 
 
-    def transfer(self, sender: Account, receiver: Account, amount: float):
+    def transfer(self, sender: Account, receiver: Account, amount: float) -> str | None:
         if amount <= 0:
             return "Transfer amount must be positive"
         if amount > sender.balance:
@@ -196,65 +191,17 @@ class ATMMachine:
 
 
 class Transaction:
-    def __init__(self, transaction_type: str, amount: float, machine_id: str, account_number: str = None, source: str = None):
+    def __init__(self, transaction_type: str, amount: float, machine_id: str, account_number: str = None, source: str = None) -> None:
         self.__transaction_type = transaction_type
         self.__amount = amount
-        self.__machine_id = machine_id  # Update machine_id dynamically
+        self.__machine_id = machine_id
         self.__destination = account_number
         self.__source = source
 
-    def __str__(self):
+    def __str__(self) -> str: 
         if self.__transaction_type in ('TW', 'TD', 'P', 'R'):
             return f"{self.__transaction_type}-{self.__source} : {self.__machine_id}-{self.__amount}-{self.__destination}"
         return f"{self.__transaction_type}-{self.__source} : {self.__machine_id}-{self.__amount}"
-
-
-class Bank:
-    def __init__(self, name: str):
-        self.__name = name
-        self.__users = []
-        self.__atms = []
-        self.__sellers = []
-        
-    @property
-    def name(self) -> str:
-        return self.__name
-
-    def add_user(self, user: User):
-        self.__users.append(user)
-
-    def add_atm(self, atm: ATMMachine):
-        self.__atms.append(atm)
-        
-    def add_seller(self, seller):
-        self.__sellers.append(seller)
-
-    def search_user_from_id(self, citizen_id: str) -> User:
-        for user in self.__users:
-            if user.citizen_id == citizen_id:
-                return user
-            
-    def search_atm_machine(self, machine_id: str) -> ATMMachine:
-        for atm in self.__atms:
-            if atm.machine_id == machine_id:
-                return atm
-            
-    def search_account_from_card(self, card_no: str) -> Account:
-        for user in self.__users:
-            for account in user.accounts:
-                if account.card.card_no == card_no:
-                    return account
-                
-    def search_account_from_account_no(self, account_no: str) -> Account:
-        for user in self.__users:
-            for account in user.accounts:
-                if account.account_number == account_no:
-                    return account
-                
-    def search_seller(self, name: str):
-        for seller in self.__sellers:
-            if seller.name == name:
-                return seller
 
 class Seller:
     def __init__(self, seller_id: str, name: str):
@@ -271,31 +218,28 @@ class Seller:
         return self.__name
     
     @property
-    def edc(self):
+    def edc(self) -> list:
         return self.__edc
     
-    def add_edc(self, edc):
+    def add_edc(self, edc) -> None:
         self.__edc.append(edc)
         
-    def search_edc_from_no(self, edc_no: str):
+    def search_edc_from_no(self, edc_no: str) -> 'EDCMachine':
         for edc in self.__edc:
             if edc.edc_id == edc_no:
                 return edc
-    def paid(self, card: Card, amount: float, seller_account: Account):
+    def paid(self, card: Card, amount: float, seller_account: Account) -> str:
         if amount <= 0:
             return "Payment amount must be positive"
-        if card.amount >= amount:
-            card - amount
-            seller_account + amount 
-            
-            card.add_transaction(Transaction('P', amount, self.__seller_id, seller_account.account_number, source='COUT'))
-            seller_account.add_transaction(Transaction('R', amount, self.__seller_id,card.account_number, source='COUT'))
-            return "Payment successful"
-        else:
+        if card.amount < amount:
             return "Insufficient funds"
-
+        card - amount
+        seller_account + amount 
+        card.add_transaction(Transaction('P', amount, self.__seller_id, seller_account.account_number, source='COUT'))
+        seller_account.add_transaction(Transaction('R', amount, self.__seller_id,card.account_number, source='COUT'))
+        return "Payment successful"
 class EDCMachine:
-    def __init__(self, edc_id: str, seller: Seller):
+    def __init__(self, edc_id: str, seller: Seller) -> None:
         self.__edc_id = edc_id
         self.__seller = seller
 
@@ -307,21 +251,65 @@ class EDCMachine:
     def seller(self) -> Seller:
         return self.__seller
 
-    def paid(self, card: Card, amount: float, seller_account: Account):
+    def paid(self, card: Card, amount: float, seller_account: Account) -> str:
         if amount <= 0:
             return "Payment amount must be positive"
-        if card.account.amount >= amount:
-            card.account - amount  # Deduct amount from the user's account
-            seller_account + amount  # Add the amount to the seller's account
-
-            # Use EDC ID as machine_id
-            card.account.add_transaction(Transaction('P', amount, self.__edc_id, seller_account.account_number, source='EDC'))
-            seller_account.add_transaction(Transaction('R', amount, self.__edc_id, card.account.account_number, source='EDC'))
-            return "Payment successful"
-        else:
+        if card.account.amount < amount:
             return "Insufficient funds"
+        card.account - amount
+        seller_account + amount
+        card.account.add_transaction(Transaction('P', amount, self.__edc_id, seller_account.account_number, source='EDC'))
+        seller_account.add_transaction(Transaction('R', amount, self.__edc_id, card.account.account_number, source='EDC'))
+        return "Payment successful"    
 
+class Bank:
+    def __init__(self, name: str) -> None:
+        self.__name = name
+        self.__users = []
+        self.__atms = []
+        self.__sellers = []
+        
+    @property
+    def name(self) -> str:
+        return self.__name
 
+    def add_user(self, user: User) -> None:
+        self.__users.append(user)
+
+    def add_atm(self, atm: ATM) -> None:
+        self.__atms.append(atm)
+        
+    def add_seller(self, seller) -> None:
+        self.__sellers.append(seller)
+
+    def search_user_from_id(self, citizen_id: str) -> User:
+        for user in self.__users:
+            if user.citizen_id == citizen_id:
+                return user
+            
+    def search_atm_machine(self, machine_id: str) -> ATM:
+        for atm in self.__atms:
+            if atm.machine_id == machine_id:
+                return atm
+            
+    def search_account_from_card(self, card_no: str) -> Account:
+        for user in self.__users:
+            for account in user.accounts:
+                if account.card.card_no == card_no:
+                    return account
+                
+    def search_account_from_account_no(self, account_no: str) -> Account:
+        for user in self.__users:
+            for account in user.accounts:
+                if account.account_number == account_no:
+                    return account
+                
+    def search_seller(self, name: str) -> Seller:
+        for seller in self.__sellers:
+            if seller.name == name:
+                return seller
+
+    
 ###############################################
 def seperator():
     print("-------------------------\n")
@@ -354,7 +342,7 @@ for citizen_id, data in user.items():
         scb.add_user(user)
         
 for machine_id, atm_balance in atm.items():
-    atm = ATMMachine(machine_id, atm_balance)
+    atm = ATM(machine_id, atm_balance)
     scb.add_atm(atm)
 
 for seller_id, name in seller_dic.items():
@@ -368,10 +356,10 @@ for seller_id, name in seller_dic.items():
 print("Welcome to SCB Bank")
 seperator()
 
-# Test case #1 : ทดสอบ การฝาก จากเครื่อง ATM โดยใช้บัตร ATM ของ harry
-# ต้องมีการ insert_card ก่อน ค้นหาเครื่อง atm เครื่องที่ 1 และบัตร atm ของ harry
-# และเรียกใช้ function หรือ method deposit จากเครื่อง ATM และเรียกใช้ + จาก account
-# ผลที่คาดหวัง :
+# Test case #1: Test deposit from an ATM using Harry's ATM card.
+# The card must be inserted first. Locate ATM machine 1 and Harry's ATM card.
+# Then call the function or method `deposit` from the ATM machine and use `+` from the account.
+# Expected outcome:
 # Test Case #1
 # Harry's ATM No :  12345
 # Harry's Account No :  1234567890
@@ -379,6 +367,7 @@ seperator()
 # Harry account before deposit :  20000
 # Deposit 1000
 # Harry account after deposit :  21000
+
 atm_machine = scb.search_atm_machine('1001')
 harry_account = scb.search_account_from_card('12345')
 atm_card = harry_account.card
@@ -395,10 +384,10 @@ print("")
 seperator()
 
 '''----------------------------------------------------------'''
-# Test case #2 : ทดสอบ การถอน จากเครื่อง ATM โดยใช้บัตร ATM ของ hermione
-# ต้องมีการ insert_card ก่อน ค้นหาเครื่อง atm เครื่องที่ 2 และบัตร atm ของ hermione
-# และเรียกใช้ function หรือ method withdraw จากเครื่อง ATM และเรียกใช้ - จาก account
-# ผลที่คาดหวัง :
+# Test case #2: Test withdrawal from an ATM using Hermione's ATM card.
+# The card must be inserted first. Locate ATM machine 2 and Hermione's ATM card.
+# Then call the function or method `withdraw` from the ATM machine and use `-` from the account.
+# Expected outcome:
 # Test Case #2
 # Hermione's ATM No :  12346
 # Hermione's Account No :  0987654321
@@ -406,6 +395,7 @@ seperator()
 # Hermione account before withdraw :  2000
 # withdraw 1000
 # Hermione account after withdraw :  1000
+
 atm_machine = scb.search_atm_machine('1002')
 hermione_account = scb.search_account_from_card('12346')
 atm_card = hermione_account.card
@@ -421,9 +411,9 @@ print("")
 seperator()
 
 '''----------------------------------------------------------'''
-# Test case #3 : ทดสอบการโอนเงินจากบัญชีของ Harry ไปยัง Hermione จำนวน 10000 บาท ที่เคาน์เตอร์
-# ให้เรียกใช้ method ที่ทำการโอนเงิน
-# ผลที่คาดหวัง
+# Test case #3: Test transferring 10,000 THB from Harry's account to Hermione's account at the counter.
+# Call the method for performing the money transfer.
+# Expected outcome:
 # Test Case #3
 # Harry's Account No :  1234567890
 # Hermione's Account No :  0987654321
@@ -447,9 +437,9 @@ seperator()
     
 '''----------------------------------------------------------'''
 
-# Test case #4 : ทดสอบการชำระเงินจากเครื่องรูดบัตร ให้เรียกใช้ method paid จากเครื่องรูดบัตร
-# โดยให้ hermione ชำระเงินไปยัง KFC จำนวน 500 บาท ผ่านบัตรของตัวเอง
-# ผลที่คาดหวัง
+# Test case #4: Test payment using a card reader. Call the `paid` method from the card reader.
+# Hermione makes a payment of 500 THB to KFC using her own card.
+# Expected outcome:
 # Hermione's Debit Card No :  12346
 # Hermione's Account No :  0987654321
 # Seller :  KFC
@@ -479,9 +469,9 @@ print("")
 seperator()
 
 '''----------------------------------------------------------'''
-# Test case #5 : ทดสอบการชำระเงินแบบอิเล็กทรอนิกส์ ให้เรียกใช้ method paid จาก kfc
-# โดยให้ Hermione ชำระเงินไปยัง Tops จำนวน 500 บาท
-# ผลที่คาดหวัง
+# Test case #5: Test electronic payment by calling the `paid` method from KFC.
+# Hermione makes a payment of 500 THB to Tops.
+# Expected outcome:
 # Test Case #5
 # Hermione's Account No :  0987654321
 # Tops's Account No :  0000000322
@@ -506,8 +496,7 @@ print("")
 seperator()
 
 '''----------------------------------------------------------'''
-# Test case #7 : แสดง transaction ของ Hermione ทั้งหมด โดยใช้ for loop 
-
+# Test case #6: Display all transactions of Hermione using a `for` loop.
 print("Test Case #7")
 hermione_account = scb.search_account_from_account_no('0987654321')
 print("Hermione's Account No : ",hermione_account.account_number)
@@ -517,7 +506,7 @@ for transaction in hermione_account:
 seperator()
 
 '''----------------------------------------------------------'''
-# Test case #8 : แสดง transaction ของ Harry ทั้งหมด โดยใช้ for loop
+# Test case #7: Display all transactions of Harry using a `for` loop.
 print("Test Case #8")
 harry_account = scb.search_account_from_account_no('1234567890')
 print("Harry's Account No : ",harry_account.account_number)
