@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="assets/chat-bot.png" />
+    <title>Chat Bot</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .chat-container { width: 300px; margin: auto; }
+        .chat-box { border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: auto; display: flex; flex-direction: column; }
+        .message { display: flex; margin: 5px 0; }
+        .bot { justify-content: flex-start; color: blue; }
+        .user { justify-content: flex-end; color: green; }
+        .input-box { display: flex; margin-top: 10px; }
+        input[type="text"] { flex: 1; padding: 5px; }
+        input[type="submit"] { padding: 5px 10px; }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-box" id="chatBox"></div>
+        <form id="chatForm" class="input-box">
+            <input name="text" id="userInput" type="text" placeholder="Type a message...">
+            <input type="submit" value="Send">
+        </form>
+    </div>
+
+    <script>
+        document.getElementById("chatForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+            let userInput = document.getElementById("userInput").value.trim();
+            if (!userInput) return;
+
+            let chatBox = document.getElementById("chatBox");
+            let userMessage = `<div class="message user"><strong>You:</strong> ${userInput}</div>`;
+            chatBox.innerHTML += userMessage;
+            document.getElementById("userInput").value = "";
+
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            fetch("/", {
+                method: "POST",
+                body: new URLSearchParams({ text: userInput }),
+                headers: { "Content-Type": "application/x-www-form-urlencoded" }
+            })
+            .then(response => response.json())
+            .then(data => {
+                setTimeout(() => {
+                    let botMessage = `<div class="message bot"><strong>Bot:</strong> ${data.bot_response}</div>`;
+                    chatBox.innerHTML += botMessage;
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }, 850);
+            });
+        });
+    </script>
+</body>
+</html>
